@@ -1,7 +1,7 @@
 {
   "name": "fe_mobile",
   "version": "1.0.0",
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -12,6 +12,7 @@
     "expo": "~49.0.7",
     "expo-location": "^16.1.0",
     "expo-notifications": "^0.20.1",
+    "expo-router": "^2.0.5",
     "expo-status-bar": "~1.6.0",
     "expo-task-manager": "^11.3.0",
     "react": "18.2.0",
