@@ -1,5 +1,5 @@
 const getRequest = async ({ url, endpoint, token }) => {
-  url ??= `${process.env.NEXT_PUBLIC_BACKEND_URL}${endpoint}/`;
+  url ??= `${process.env.EXPO_PUBLIC_BACKEND_URL}${endpoint}/`;
 
   const response = await fetch(url, {
     headers: {
@@ -18,4 +18,26 @@ const getRequest = async ({ url, endpoint, token }) => {
   return jsonResponse;
 };
 
-export { getRequest };
+const postRequest = async ({ endpoint, body, url, token }) => {
+  url ??= `${process.env.EXPO_PUBLIC_BACKEND_URL}${endpoint}/`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error(error);
+    throw new Error(`Response failed with status ${response.status}`, {
+      cause: error,
+    });
+  }
+
+  const jsonResponse = await response.json();
+  return jsonResponse;
+};
+
+export { getRequest, postRequest };

@@ -1,10 +1,11 @@
-import { useLocalSearchParams, Link } from "expo-router";
+import { useLocalSearchParams, Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Dimensions, SafeAreaView } from "react-native";
 import WebView from "react-native-webview";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getToken } from "../utils/getToken";
 
 const LOCATION_TRACKING = "location-tracking";
 
@@ -14,28 +15,17 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
     return;
   }
 
-  const token = await AsyncStorage.getItem("refreshToken");
-
+  const idToken = await getToken();
+  
   const coords = data.locations[0].coords;
   const { latitude, longitude } = coords;
-  
-  const API_KEY = "AIzaSyDNn2Derdiv7ygS445WhQdwaNU8j_UIkX4";
-
-  const idTokenResponse = await fetch(`https://securetoken.googleapis.com/v1/token?key=${API_KEY}`, {
-    method: "POST",
-    body: JSON.stringify({
-      grant_type: "refresh_token",
-      refresh_token: token
-    })
-  });
-
-  const { id_token: idToken } = await idTokenResponse.json();
 
   const searchParam = new URLSearchParams({ latitude, longitude });
 
   const url = `${
     process.env.EXPO_PUBLIC_BACKEND_URL
   }/event/discover/nearby/?${searchParam.toString()}`;
+  
 
   // If statement to check whether still participating on events
 
@@ -53,6 +43,7 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
 
 export default function App() {
   const searchParam = useLocalSearchParams();
+  const router = useRouter();
 
   const debugging = `
   const consoleLog = (type, log) => window.ReactNativeWebView.postMessage(JSON.stringify({'type': 'Console', 'data': {'type': type, 'log': log}}));
@@ -98,15 +89,6 @@ export default function App() {
         notificationColor: "#0000FF",
       },
     });
-    //  Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
-    //   accuracy: Location.Accuracy.BestForNavigation,
-    //   deferredUpdatesDistance: 500,
-    //   foregroundService: {
-    //     notificationTitle: "title",
-    //     notificationBody: "body",
-    //     notificationColor: "#0000FF",
-    //   },
-    // });
   };
 
   const stopLocationTracking = async () => {
@@ -121,6 +103,7 @@ export default function App() {
   const handleMessage = async (event) => {
     const message = JSON.parse(event?.nativeEvent?.data);
     const { type } = message;
+    console.log(message)
 
     switch (type) {
       case "location-sharing": {
@@ -132,6 +115,7 @@ export default function App() {
 
           if (!permissions.allow) return;
           startLocationTracking();
+          // stopLocationTracking();
         } else {
           stopLocationTracking();
         }
@@ -142,9 +126,15 @@ export default function App() {
 
         if (token == null) {
           await AsyncStorage.removeItem("refreshToken");
+          stopLocationTracking();
         }
 
         await AsyncStorage.setItem("refreshToken", token);
+      }
+      case "open-qr-scanner" : {
+        const {event_id, participation_type} = message.checkInData;
+
+        router.push(`/qrscanner?eventId=${event_id}&participationType=${participation_type}`);
       }
     }
   };
@@ -161,9 +151,9 @@ export default function App() {
         geolocationEnabled
         onMessage={handleMessage}
         style={styles.webview}
+        pullToRefreshEnabled
       />
       <StatusBar style="auto" />
-      <Link href={`/qrscanner`}>Test</Link>
     </SafeAreaView>
   );
 }
