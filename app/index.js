@@ -6,6 +6,15 @@ import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken } from "../utils/getToken";
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const LOCATION_TRACKING = "location-tracking";
 
@@ -38,7 +47,26 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
   }
 
   const listOfEventsJSON = await listOfEventsResponse.json();
-  console.log({ listOfEventsJSON });
+  
+  const stringifiedListOfEvents = JSON.stringify(listOfEventsJSON);
+  const listOfEventsPrevious = await AsyncStorage.getItem("listOfEvents");
+  
+  // console.log(stringifiedListOfEvents === listOfEventsPrevious)
+  if (stringifiedListOfEvents === listOfEventsPrevious) return;
+  const noOfEvents = listOfEventsJSON.length;
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: `Let's have fun! 🎊`,
+      body: `Get ready! There ${noOfEvents === 1 ? "is" : "are"} ${noOfEvents} events near you related to your interests.`,
+      data: { data: `${noOfEvents} near you` },
+    },
+    trigger: { seconds: 1 },
+  });
+
+  await AsyncStorage.setItem("listOfEvents", stringifiedListOfEvents);
+  
+
 });
 
 export default function App() {
@@ -103,7 +131,6 @@ export default function App() {
   const handleMessage = async (event) => {
     const message = JSON.parse(event?.nativeEvent?.data);
     const { type } = message;
-    console.log(message)
 
     switch (type) {
       case "location-sharing": {
@@ -114,6 +141,9 @@ export default function App() {
           const permissions = await askLocationPerms();
 
           if (!permissions.allow) return;
+          const notificationPerms = await Notifications.requestPermissionsAsync();
+          if (!(notificationPerms.granted || notificationPerms.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL)) return;
+          
           startLocationTracking();
           // stopLocationTracking();
         } else {
