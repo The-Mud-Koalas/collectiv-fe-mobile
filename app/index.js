@@ -51,9 +51,10 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
   const stringifiedListOfEvents = JSON.stringify(listOfEventsJSON);
   const listOfEventsPrevious = await AsyncStorage.getItem("listOfEvents");
   
-  // console.log(stringifiedListOfEvents === listOfEventsPrevious)
   if (stringifiedListOfEvents === listOfEventsPrevious) return;
   const noOfEvents = listOfEventsJSON.length;
+
+  if (noOfEvents === 0) return;
 
   await Notifications.scheduleNotificationAsync({
     content: {
