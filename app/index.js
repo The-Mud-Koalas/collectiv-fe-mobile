@@ -44,6 +44,7 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
 
   if (!listOfEventsResponse.ok) {
     console.error(listOfEventsResponse.status);
+    return;
   }
 
   const listOfEventsJSON = await listOfEventsResponse.json();
@@ -110,8 +111,9 @@ export default function App() {
 
     Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.BestForNavigation,
-      deferredUpdatesInterval: 0,
-      deferredUpdatesDistance: 0,
+      // deferredUpdatesInterval: 0,
+      // deferredUpdatesDistance: 0,
+      deferredUpdatesDistance: 2,
       foregroundService: {
         notificationTitle: "title",
         notificationBody: "body",
