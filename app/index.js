@@ -4,9 +4,9 @@ import { StyleSheet, Dimensions, SafeAreaView } from "react-native";
 import WebView from "react-native-webview";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getToken } from "../utils/getToken";
-import * as Notifications from 'expo-notifications';
+import * as Notifications from "expo-notifications";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -25,7 +25,7 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
   }
 
   const idToken = await getToken();
-  
+
   const coords = data.locations[0].coords;
   const { latitude, longitude } = coords;
 
@@ -34,12 +34,14 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
   const url = `${
     process.env.EXPO_PUBLIC_BACKEND_URL
   }/event/discover/nearby/?${searchParam.toString()}`;
-  
 
   // If statement to check whether still participating on events
 
   const listOfEventsResponse = await fetch(url, {
-    headers: { Authorization: `Bearer ${idToken}` },
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      Origin: process.env.EXPO_PUBLIC_APP_URL,
+    },
   });
 
   if (!listOfEventsResponse.ok) {
@@ -48,10 +50,10 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
   }
 
   const listOfEventsJSON = await listOfEventsResponse.json();
-  
+
   const stringifiedListOfEvents = JSON.stringify(listOfEventsJSON);
   const listOfEventsPrevious = await AsyncStorage.getItem("listOfEvents");
-  
+
   if (stringifiedListOfEvents === listOfEventsPrevious) return;
   const noOfEvents = listOfEventsJSON.length;
 
@@ -60,15 +62,15 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
   await Notifications.scheduleNotificationAsync({
     content: {
       title: `Let's have fun! 🎊`,
-      body: `Get ready! There ${noOfEvents === 1 ? "is" : "are"} ${noOfEvents} events near you related to your interests.`,
+      body: `Get ready! There ${
+        noOfEvents === 1 ? "is" : "are"
+      } ${noOfEvents} events near you related to your interests.`,
       data: { data: `${noOfEvents} near you` },
     },
     trigger: { seconds: 1 },
   });
 
   await AsyncStorage.setItem("listOfEvents", stringifiedListOfEvents);
-  
-
 });
 
 export default function App() {
@@ -111,8 +113,6 @@ export default function App() {
 
     Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.BestForNavigation,
-      // deferredUpdatesInterval: 0,
-      // deferredUpdatesDistance: 0,
       deferredUpdatesDistance: 2,
       foregroundService: {
         notificationTitle: "title",
@@ -144,9 +144,17 @@ export default function App() {
           const permissions = await askLocationPerms();
 
           if (!permissions.allow) return;
-          const notificationPerms = await Notifications.requestPermissionsAsync();
-          if (!(notificationPerms.granted || notificationPerms.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL)) return;
-          
+          const notificationPerms =
+            await Notifications.requestPermissionsAsync();
+          if (
+            !(
+              notificationPerms.granted ||
+              notificationPerms.ios?.status ===
+                Notifications.IosAuthorizationStatus.PROVISIONAL
+            )
+          )
+            return;
+
           startLocationTracking();
           // stopLocationTracking();
         } else {
@@ -164,10 +172,12 @@ export default function App() {
 
         await AsyncStorage.setItem("refreshToken", token);
       }
-      case "open-qr-scanner" : {
-        const {event_id, participation_type} = message.checkInData;
+      case "open-qr-scanner": {
+        const { event_id, participation_type } = message.checkInData;
 
-        router.push(`/qrscanner?eventId=${event_id}&participationType=${participation_type}`);
+        router.push(
+          `/qrscanner?eventId=${event_id}&participationType=${participation_type}`
+        );
       }
     }
   };
