@@ -39,7 +39,6 @@ const QrScannerPage = () => {
     const endpoint = `/participation/${participationType.toLowerCase()}/check-in/assisted`;
     const location = await Location.getCurrentPositionAsync();
     const { latitude, longitude } = location.coords;
-    console.log(data);
     const checkInData = {
       event_id: eventId,
     };
@@ -54,7 +53,6 @@ const QrScannerPage = () => {
           : "volunteer_email_phone"]: data,
       };
 
-      console.log({ body });
       const checkIn = await postRequest({
         endpoint,
         body,

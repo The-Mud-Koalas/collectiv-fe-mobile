@@ -4,7 +4,7 @@ const getRequest = async ({ url, endpoint, token }) => {
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      Origin: process.env.EXPO_PUBLIC_APP_URL
     },
   });
 
@@ -23,6 +23,8 @@ const postRequest = async ({ endpoint, body, url, token }) => {
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Origin: process.env.EXPO_PUBLIC_APP_URL
     },
     body: JSON.stringify(body),
     method: "POST",
